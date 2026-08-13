@@ -269,7 +269,7 @@
   function totalQ(){ return STEPS.length - 2; } // excludes welcome + thankyou
 
   var answers = {
-    about:'', kit:{laptop:'', software:''},
+    about:'', kit:{laptop:''},
     tools:{selected:[], otherName:''}, toolLevels:{},
     anythingelse:'',
     excites:{order:[], other:''},
@@ -339,10 +339,6 @@
           '<div class="kit-block">' +
             '<p class="q-prompt">Will you be bringing your own laptop? No worries either way, we\'ll make sure you\'re not glued to a screen the whole time.</p>' +
             '<div class="pill-row">' + pillGroup('kit.laptop', ['Yes','No','Not sure'], answers.kit.laptop) + '</div>' +
-          '</div>' +
-          '<div class="kit-block">' +
-            '<p class="q-prompt small">Do you already have access to any design software (Photoshop, Illustrator, Canva, etc.)?</p>' +
-            '<input type="text" class="input-line" data-path="kit.software" placeholder="e.g. school license for Adobe..." value="' + esc(answers.kit.software) + '">' +
           '</div>'};
 
       case 'scale':
@@ -571,7 +567,7 @@
     lines.push('Anouk — pre-arrival questionnaire');
     lines.push('');
     lines.push('About: ' + (answers.about || '—'));
-    lines.push('Laptop: ' + (answers.kit.laptop || '—') + ' | Software access: ' + (answers.kit.software || '—'));
+    lines.push('Laptop: ' + (answers.kit.laptop || '—'));
     var toolLines = TOOL_OPTIONS.filter(function(o){ return answers.tools.selected.indexOf(o.id) > -1; }).map(function(o){
       var label = o.id === 'other' ? (answers.tools.otherName || 'Other tool') : o.label;
       return label + ': ' + (answers.toolLevels[o.id] || '—');
