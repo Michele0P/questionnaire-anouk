@@ -239,6 +239,12 @@
     {id:'archive', label:'10th anniversary archive'},
     {id:'events', label:'Events (planning, making things, on-site setup, comms)'}
   ];
+  var TOOL_OPTIONS = [
+    {id:'photoshop', label:'Photoshop'},
+    {id:'premiere', label:'Premiere Pro'},
+    {id:'canva', label:'Canva'},
+    {id:'other', label:'Other'}
+  ];
   var AHEAD_ITEMS = [
     {id:'portfolio', label:'A specific piece for my portfolio (a video, a design, a mini case study...)'},
     {id:'skill', label:'A new skill I didn\'t have before'},
@@ -250,9 +256,7 @@
     {id:'welcome', type:'welcome'},
     {id:'about', type:'textarea', title:'About you', prompt:"We've seen your portfolio, so we already know the design side. Tell us a bit more about you outside of that: hobbies, what you're into, anything that helps us get to know you.", placeholder:"I'm Anouk, I..."},
     {id:'kit', type:'kit'},
-    {id:'photoshop', type:'scale', title:'Photoshop', prompt:'Have you used Photoshop before?'},
-    {id:'premiere', type:'scale', title:'Premiere Pro', prompt:'Have you used Premiere Pro before?'},
-    {id:'othertools', type:'toolsgrid'},
+    {id:'toolsselect', type:'toolsselect'},
     {id:'anythingelse', type:'text', title:'Anything else?', prompt:'Any other tool or software worth mentioning? Totally optional.', placeholder:'Optional'},
     {id:'excites', type:'ranking'},
     {id:'goals', type:'textarea', title:'What do you want to do with us', prompt:"Beyond what excites you most, is there something specific you're hoping to work on, try, or learn while you're with us? Tell us in your own words.", placeholder:"I'd love to..."},
@@ -262,12 +266,11 @@
     {id:'thankyou', type:'thankyou'}
   ];
 
-  var TOTAL_Q = STEPS.length - 2; // excludes welcome + thankyou
+  function totalQ(){ return STEPS.length - 2; } // excludes welcome + thankyou
 
   var answers = {
     about:'', kit:{laptop:'', software:''},
-    photoshop:'', premiere:'',
-    othertools:{canva:'', video:''},
+    tools:{selected:[], otherName:''}, toolLevels:{},
     anythingelse:'',
     excites:{order:[], other:''},
     goals:'', finale:'',
@@ -319,22 +322,22 @@
           '</div>'};
 
       case 'textarea':
-        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + TOTAL_Q, html:
+        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + totalQ(), html:
           '<h2 class="q-title">' + esc(step.title) + '</h2>' +
           '<p class="q-prompt">' + esc(step.prompt) + '</p>' +
           '<textarea class="input-area" data-path="' + step.id + '" placeholder="' + esc(step.placeholder||'') + '">' + esc(getPath(answers, step.id) || '') + '</textarea>'};
 
       case 'text':
-        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + TOTAL_Q, html:
+        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + totalQ(), html:
           '<h2 class="q-title">' + esc(step.title) + '</h2>' +
           '<p class="q-prompt">' + esc(step.prompt) + '</p>' +
           '<input type="text" class="input-line" data-path="' + step.id + '" placeholder="' + esc(step.placeholder||'') + '" value="' + esc(getPath(answers, step.id) || '') + '">'};
 
       case 'kit':
-        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + TOTAL_Q, html:
+        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + totalQ(), html:
           '<h2 class="q-title">Your kit</h2>' +
           '<div class="kit-block">' +
-            '<p class="q-prompt">Will you be bringing your own laptop? No worries either way, either way we\'ll make sure you\'re not glued to a screen the whole time.</p>' +
+            '<p class="q-prompt">Will you be bringing your own laptop? No worries either way, we\'ll make sure you\'re not glued to a screen the whole time.</p>' +
             '<div class="pill-row">' + pillGroup('kit.laptop', ['Yes','No','Not sure'], answers.kit.laptop) + '</div>' +
           '</div>' +
           '<div class="kit-block">' +
@@ -343,25 +346,30 @@
           '</div>'};
 
       case 'scale':
-        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + TOTAL_Q, html:
+        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + totalQ(), html:
           '<h2 class="q-title">' + esc(step.title) + '</h2>' +
           '<p class="q-prompt">' + esc(step.prompt) + '</p>' +
           '<div class="pill-row">' + pillGroup(step.id, SCALE_OPTIONS, answers[step.id]) + '</div>'};
 
-      case 'toolsgrid':
-        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + TOTAL_Q, html:
-          '<h2 class="q-title">A couple more tools</h2>' +
-          '<div class="kit-block">' +
-            '<p class="q-prompt small">Canva</p>' +
-            '<div class="pill-row">' + pillGroup('othertools.canva', SCALE_OPTIONS, answers.othertools.canva) + '</div>' +
-          '</div>' +
-          '<div class="kit-block">' +
-            '<p class="q-prompt small">Video editing, in general</p>' +
-            '<div class="pill-row">' + pillGroup('othertools.video', SCALE_OPTIONS, answers.othertools.video) + '</div>' +
-          '</div>'};
+      case 'toolsselect':
+        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + totalQ(), html:
+          '<h2 class="q-title">Your tools</h2>' +
+          '<p class="q-prompt">Which of these do you already use? Tap all that apply.</p>' +
+          '<div class="check-list">' + TOOL_OPTIONS.map(function(o){
+            var checked = answers.tools.selected.indexOf(o.id) > -1;
+            return '<label class="check-item' + (checked ? ' is-checked' : '') + '"><input type="checkbox" data-tool-id="' + o.id + '" ' + (checked ? 'checked' : '') + '><span>' + esc(o.label) + '</span></label>';
+          }).join('') + '</div>' +
+          (answers.tools.selected.indexOf('other') > -1 ?
+            '<input type="text" class="input-line" data-path="tools.otherName" placeholder="Which tool?" value="' + esc(answers.tools.otherName) + '">' : '')};
+
+      case 'toollevel':
+        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + totalQ(), html:
+          '<h2 class="q-title">' + esc(step.title) + '</h2>' +
+          '<p class="q-prompt">' + esc(step.prompt) + '</p>' +
+          '<div class="pill-row">' + pillGroup('toolLevels.' + step.toolId, SCALE_OPTIONS, answers.toolLevels[step.toolId]) + '</div>'};
 
       case 'ranking':
-        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + TOTAL_Q, html:
+        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + totalQ(), html:
           '<h2 class="q-title">What excites you</h2>' +
           '<p class="q-prompt">Here\'s what we work on: social content, product & merch design, our website, our newsletter, building an archive for our 10th anniversary, and events (planning, making things, on-site setup, comms, and more). Tap them in order of preference, most exciting first (tap again to undo).</p>' +
           '<div class="rank-list">' + EXCITE_ITEMS.map(function(it){
@@ -374,7 +382,7 @@
           '<input type="text" class="input-line" data-path="excites.other" placeholder="Optional" value="' + esc(answers.excites.other) + '">'};
 
       case 'english':
-        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + TOTAL_Q, html:
+        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + totalQ(), html:
           '<h2 class="q-title">Languages</h2>' +
           '<p class="q-prompt">Just your honest self-assessment, there\'s no wrong answer here.</p>' +
           '<label class="select-label">Written English<select class="input-select" data-path="english.written">' + cefrOptions('english.written', answers.english.written) + '</select></label>' +
@@ -383,7 +391,7 @@
           '<input type="text" class="input-line" data-path="english.other" placeholder="e.g. Dutch, German..." value="' + esc(answers.english.other) + '">'};
 
       case 'ahead':
-        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + TOTAL_Q, html:
+        return {eyebrow:'WAYPOINT ' + questionIndex(step) + ' / ' + totalQ(), html:
           '<h2 class="q-title">Looking ahead</h2>' +
           '<p class="q-prompt">When you think about the end of your time here, what would feel like a real win? Pick as many as you like.</p>' +
           '<div class="check-list">' + AHEAD_ITEMS.map(function(it){
@@ -485,6 +493,17 @@
       });
     });
 
+    body.querySelectorAll('input[data-tool-id]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var id = cb.getAttribute('data-tool-id');
+        var sel = answers.tools.selected;
+        var pos = sel.indexOf(id);
+        if(cb.checked && pos === -1){ sel.push(id); }
+        if(!cb.checked && pos > -1){ sel.splice(pos,1); }
+        renderStep(currentIdx, true);
+      });
+    });
+
     var copyBtn = document.getElementById('btn-copy');
     if(copyBtn){
       copyBtn.addEventListener('click', function(){
@@ -501,7 +520,25 @@
 
   var currentIdx = 0;
 
+  function syncToolSteps(){
+    for(var i = STEPS.length - 1; i >= 0; i--){
+      if(STEPS[i].dynamic){ STEPS.splice(i, 1); }
+    }
+    var anchor = -1;
+    for(var j = 0; j < STEPS.length; j++){
+      if(STEPS[j].id === 'toolsselect'){ anchor = j; break; }
+    }
+    var newSteps = TOOL_OPTIONS.filter(function(o){
+      return answers.tools.selected.indexOf(o.id) > -1;
+    }).map(function(o){
+      var label = o.id === 'other' ? (answers.tools.otherName || 'Other tool') : o.label;
+      return {id:'toollevel-' + o.id, type:'toollevel', toolId:o.id, dynamic:true, title:label, prompt:'Have you used ' + label + ' before?'};
+    });
+    STEPS.splice.apply(STEPS, [anchor + 1, 0].concat(newSteps));
+  }
+
   function renderStep(idx, preserveScroll){
+    syncToolSteps();
     currentIdx = idx;
     var step = STEPS[idx];
     var out = renderBody(step);
@@ -535,9 +572,11 @@
     lines.push('');
     lines.push('About: ' + (answers.about || '—'));
     lines.push('Laptop: ' + (answers.kit.laptop || '—') + ' | Software access: ' + (answers.kit.software || '—'));
-    lines.push('Photoshop: ' + (answers.photoshop || '—'));
-    lines.push('Premiere Pro: ' + (answers.premiere || '—'));
-    lines.push('Canva: ' + (answers.othertools.canva || '—') + ' | Video editing: ' + (answers.othertools.video || '—'));
+    var toolLines = TOOL_OPTIONS.filter(function(o){ return answers.tools.selected.indexOf(o.id) > -1; }).map(function(o){
+      var label = o.id === 'other' ? (answers.tools.otherName || 'Other tool') : o.label;
+      return label + ': ' + (answers.toolLevels[o.id] || '—');
+    });
+    lines.push('Tools used: ' + (toolLines.length ? toolLines.join(' | ') : '—'));
     lines.push('Other tools: ' + (answers.anythingelse || '—'));
     var ranked = answers.excites.order.map(function(id){
       return EXCITE_ITEMS.find(function(i){ return i.id === id; }).label;
